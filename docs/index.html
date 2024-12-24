@@ -28,9 +28,9 @@ if (selfUrl.searchParams.has("code")) {
   (async () => {
     const tokenResponse = await fetch(tokenRequest);
     const tokenResponseParsed = await tokenResponse.json();
-    self.navigator.sessionStorage.set("accessToken", tokenResponseParsed.access_token);
-    self.navigator.sessionStorage.set("refreshToken", tokenResponseParsed.refresh_token);
-    self.navigator.sessionStorage.set("expiresAt", Date.now + 1000 * tokenResponseParsed.expires_in);
+    self.sessionStorage.set("accessToken", tokenResponseParsed.access_token);
+    self.sessionStorage.set("refreshToken", tokenResponseParsed.refresh_token);
+    self.sessionStorage.set("expiresAt", Date.now + 1000 * tokenResponseParsed.expires_in);
     self.location = new URL("./interface.html", selfUrl);
   })();
 } else {
