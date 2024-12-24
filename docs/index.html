@@ -22,7 +22,7 @@ if (selfUrl.searchParams.has("code")) {
   tokenParameters.append("client_id", clientId);
   const tokenRequest = new Request(tokenUri, {
     method: "POST",
-    body: new Blob(tokenParameters.toString(), { type: "application/x-www-form-urlencoded" }),
+    body: new Blob( [ tokenParameters.toString() ], { type: "application/x-www-form-urlencoded" }),
   });
   (async () => {
     const tokenResponse = await fetch(tokenRequest);
