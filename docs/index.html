@@ -30,7 +30,7 @@ if (selfUrl.searchParams.has("code")) {
     const tokenResponseParsed = await tokenResponse.json();
     self.sessionStorage.setItem("accessToken", tokenResponseParsed.access_token);
     self.sessionStorage.setItem("refreshToken", tokenResponseParsed.refresh_token);
-    self.sessionStorage.setItem("expiresAt", Date.now + 1000 * tokenResponseParsed.expires_in);
+    self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * tokenResponseParsed.expires_in);
     self.location = new URL("./interface.html", selfUrl);
   })();
 } else {
