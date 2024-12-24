@@ -14,10 +14,11 @@ const selfUrl = new URL(self.location);
 const clientId = "ec873256-8881-4210-b100-bcc6b964a668";
 const redirectUri = "https://scotwatson.github.io/X10Server/";
 if (selfUrl.searchParams.has("code")) {
+  const code = selfUrl.searchParams.get("code");
   const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
   tokenParameters = new URLSearchParams();
   tokenParameters.append("grant_type", "authorization_code");
-  tokenParameters.append("code", selfUrl.searchParams.has("code"));
+  tokenParameters.append("code", code);
   tokenParameters.append("redirect_uri", redirectUri);
   tokenParameters.append("client_id", clientId);
   const tokenRequest = new Request(tokenUri, {
