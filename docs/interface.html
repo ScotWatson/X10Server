@@ -47,7 +47,7 @@ async function performRefreshToken() {
   refreshParameters.append("refresh_token", refreshToken);
   const refreshRequest = new Request(tokenUri, {
     method: "POST",
-    body: refreshParameters.toString(),
+    body: new Blob(refreshParameters.toString(), { type: "application/x-www-form-urlencoded" }),
   });
   const refreshResponse = await fetch(refreshRequest);
   const refreshResponseParsed = refreshResponse.json();
