@@ -39,8 +39,8 @@ function isTokenExpired() {
   return (new Date() >= expiresAt);
 }
 async function performRefreshToken() {
-  self.sessionStorage.remove("accessToken");
-  const refreshToken = self.sessionStorage.get("refreshToken");
+  self.sessionStorage.removeItem("accessToken");
+  const refreshToken = self.sessionStorage.getItem("refreshToken");
   const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
   const refreshParameters = new URLSearchParams();
   refreshParameters.append("grant_type", "refresh_token");
@@ -52,11 +52,11 @@ async function performRefreshToken() {
   const refreshResponse = await fetch(refreshRequest);
   const refreshResponseParsed = refreshResponse.json();
   if (refreshResponse.statusCode == 200) {
-    self.sessionStorage.set("accessToken", refreshResponse.access_token);
+    self.sessionStorage.setItem("accessToken", refreshResponse.access_token);
     if (refreshResponse.refresh_token) {
-      self.sessionStorage.set("refreshToken", refreshResponse.refresh_token);
+      self.sessionStorage.setItem("refreshToken", refreshResponse.refresh_token);
     }
-    self.sessionStorage.set("expiresAt", Date.now() + 1000 * refreshResponse.expires_in);
+    self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * refreshResponse.expires_in);
   } else if (refreshResponse.statusCode == 400) {
     alert("error: " + refreshResponseParsed.error + "\nerror description: " + refreshResponseParsed.error_description + "\nerror URI: " + refreshResponseParsed.error_uri);
     self.location = (new URL("./index.html", selfUrl)).toString();
