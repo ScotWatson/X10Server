@@ -94,6 +94,6 @@ export async function newRequestWithToken(url, options) {
   return new Request(url, options);
 }
 function isTokenExpired() {
-  const expiresAt = new Date(self.navigator.sessionStorage.get("expiresAt"));
+  const expiresAt = new Date(self.sessionStorage.get("expiresAt"));
   return (new Date() >= expiresAt);
 }
