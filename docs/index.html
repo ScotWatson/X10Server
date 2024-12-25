@@ -22,7 +22,7 @@ const promiseLoad = new Promise((resolve, reject) => {
     resolve();
   });
 });
-const promiseOauth = import("oauth2.mjs");
+const promiseOauth = import("./oauth2.mjs");
 Promise.all([ promiseLoad, promiseOauth ]).then(login).then(start);
     
 async function login([ load, Oauth ]) {
