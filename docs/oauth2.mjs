@@ -83,7 +83,7 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
     }
   }
 }
-export async function newRequestWithToken(url, options) {
+export function newRequestWithToken(url, options) {
   if (isTokenExpired()) {
     performRefreshToken();
   }
