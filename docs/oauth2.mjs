@@ -45,7 +45,7 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
         return;
       } else {
         const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
-        authorizationQuery = new URLSearchParams();
+        const authorizationQuery = new URLSearchParams();
         authorizationQuery.append("response_type", "code");
         authorizationQuery.append("client_id", clientId);
         authorizationQuery.append("redirect_uri", redirectUri);
