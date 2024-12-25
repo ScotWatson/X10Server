@@ -89,7 +89,7 @@ export function newRequestWithToken(url, options) {
   }
   const access_token = self.sessionStorage.getItem("accessToken");
   if (options.headers) {
-    options.headers.add("Authorization", "Bearer " + access_token);
+    options.headers.append("Authorization", "Bearer " + access_token);
   }
   return new Request(url, options);
 }
