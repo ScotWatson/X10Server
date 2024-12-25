@@ -40,6 +40,7 @@ function start([ Oauth ]) {
       method: "POST",
       body: "",
     });
+    console.log(deleteRequest);
     const deleteResponse = await fetch(deleteRequest);
     if (deleteResponse.statusCode === 200) {
       alert("User successfully deleted!");
