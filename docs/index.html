@@ -42,7 +42,7 @@ function start([ Oauth ]) {
     });
     console.log(deleteRequest);
     const deleteResponse = await fetch(deleteRequest);
-    if (deleteResponse.statusCode === 200) {
+    if (deleteResponse.status === 200) {
       alert("User successfully deleted!");
       self.location = "https://www.scotwatson.x10.mx";
     } else {
