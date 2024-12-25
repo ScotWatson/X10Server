@@ -44,12 +44,11 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
       } else if (self.sessionStorage.getItem("accessToken") !== null) {
         return;
       } else {
-        const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
         const authorizationQuery = new URLSearchParams();
         authorizationQuery.append("response_type", "code");
         authorizationQuery.append("client_id", clientId);
         authorizationQuery.append("redirect_uri", redirectUri);
-        authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
+        const authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
         self.location = authorizationLocation.toString();
       }
     }
