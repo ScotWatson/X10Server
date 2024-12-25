@@ -18,7 +18,7 @@ const clientId = "ec873256-8881-4210-b100-bcc6b964a668";
 const redirectUri = new URL("https://scotwatson.github.io/X10Server/");
 
 const promiseLoad = new Promise((resolve, reject) => {
-  window.addeventListener("load", () => {
+  window.addEventListener("load", () => {
     resolve();
   });
 });
