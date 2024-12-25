@@ -11,54 +11,35 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   </body>
   <script>
 const selfUrl = new URL(self.location);
+const response_type = "code";
+const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
+const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
 const clientId = "ec873256-8881-4210-b100-bcc6b964a668";
-const redirectUri = "https://scotwatson.github.io/X10Server/";
-if (selfUrl.searchParams.has("code")) {
-  const code = selfUrl.searchParams.get("code");
-  const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
-  tokenParameters = new URLSearchParams();
-  tokenParameters.append("grant_type", "authorization_code");
-  tokenParameters.append("code", code);
-  tokenParameters.append("redirect_uri", redirectUri);
-  tokenParameters.append("client_id", clientId);
-  const tokenRequest = new Request(tokenUri, {
-    method: "POST",
-    body: new Blob( [ tokenParameters.toString() ], { type: "application/x-www-form-urlencoded" }),
+const redirectUri = new URL("https://scotwatson.github.io/X10Server/");
+
+const promiseLoad = new Promise((resolve, reject) => {
+  window.addeventListener("load", () => {
+    resolve();
   });
-  (async () => {
-    const tokenResponse = await fetch(tokenRequest);
-    const tokenResponseParsed = await tokenResponse.json();
-    self.sessionStorage.setItem("accessToken", tokenResponseParsed.access_token);
-    self.sessionStorage.setItem("refreshToken", tokenResponseParsed.refresh_token);
-    self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * tokenResponseParsed.expires_in);
-    start();
-  })();
-} else {
-  const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
-  authorizationQuery = new URLSearchParams();
-  authorizationQuery.append("response_type", "code");
-  authorizationQuery.append("client_id", clientId);
-  authorizationQuery.append("redirect_uri", redirectUri);
-  authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
-  self.location = authorizationLocation.toString();
+});
+const promiseOauth = import("oauth2.mjs");
+Promise.all([ promiseLoad, promiseOauth ]).then(login).then(start);
+    
+async function login([ load, Oauth ]) {
+  await Oauth.login(response_type, authorizationUri, tokenUri, clientId, redirectUri);
+  return [ Oauth ];
 }
-function start() {
+function start([ Oauth ]) {
   const apiUrl = new URL("https://www.scotwatson.x10.mx/");
   const btnDelete = document.createElement("button");
   btnDelete.innerHTML = "Delete User";
   document.body.appendChild(btnDelete);
   btnDelete.addEventListener("click", async () => {
     const deleteEndpoint = new URL("./delete", apiUrl);
-    if (isTokenExpired()) {
-      await performRefreshToken();
-    }
-    const deleteHeaders = new Headers();
-    deleteHeaders.append("", self.navigator.sessionStorage.get("accessToken"));
-    deleteRequest = new Request(deleteEndpoint, {
-      method: "GET",
-      headers: deleteHeaders,
-    })
-    deleteResponse = await fetch(deleteRequest);
+    const deleteResponse = Oauth.fetchWithToken(new Request(deleteEndpoint, {
+      method: "POST",
+      body: ,
+    }));
     if (deleteResponse.statusCode === 200) {
       alert("User successfully deleted!");
       self.location = "https://www.scotwatson.x10.mx";
@@ -66,37 +47,6 @@ function start() {
       alert("Attempt to delete user failed!");
     }
   });
-  function isTokenExpired() {
-    const expiresAt = new Date(self.navigator.sessionStorage.get("expiresAt"));
-    return (new Date() >= expiresAt);
-  }
-  async function performRefreshToken() {
-    self.sessionStorage.removeItem("accessToken");
-    const refreshToken = self.sessionStorage.getItem("refreshToken");
-    const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
-    const refreshParameters = new URLSearchParams();
-    refreshParameters.append("grant_type", "refresh_token");
-    refreshParameters.append("refresh_token", refreshToken);
-    const refreshRequest = new Request(tokenUri, {
-      method: "POST",
-      body: new Blob( [ refreshParameters.toString() ], { type: "application/x-www-form-urlencoded" }),
-    });
-    const refreshResponse = await fetch(refreshRequest);
-    const refreshResponseParsed = refreshResponse.json();
-    if (refreshResponse.statusCode == 200) {
-      self.sessionStorage.setItem("accessToken", refreshResponse.access_token);
-      if (refreshResponse.refresh_token) {
-        self.sessionStorage.setItem("refreshToken", refreshResponse.refresh_token);
-      }
-      self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * refreshResponse.expires_in);
-    } else if (refreshResponse.statusCode == 400) {
-      alert("error: " + refreshResponseParsed.error + "\nerror description: " + refreshResponseParsed.error_description + "\nerror URI: " + refreshResponseParsed.error_uri);
-      self.location = (new URL("./index.html", selfUrl)).toString();
-    } else {
-      alert("Unexpected response to token refresh request");
-      self.location = (new URL("./index.html", selfUrl)).toString();
-    }
-  }
 }
   </script>
 </html>
