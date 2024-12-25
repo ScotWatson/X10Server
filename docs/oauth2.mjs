@@ -50,6 +50,7 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
         authorizationQuery.append("redirect_uri", redirectUri);
         const authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
         self.location = authorizationLocation.toString();
+        throw new Error("Redirecting to authorization endpoint...");
       }
     }
       break;
