@@ -41,7 +41,7 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
           self.sessionStorage.setItem("refreshToken", tokenResponseParsed.refresh_token);
           self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * tokenResponseParsed.expires_in);
         })();
-      } else if (self.sessionStorage.hasItem("accessToken")) {
+      } else if (self.sessionStorage.getItem("accessToken") === null) {
         return;
       } else {
         const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
