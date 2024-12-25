@@ -5,19 +5,32 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 const selfUrl = new URL(self.location);
 
-export async function login(response_type, authorizationUri, tokenUri, clientId, redirectUri) {
-  switch (response_type) {
+let thisRedirectUri;
+
+export function setup(responseType, authorizationUri, tokenUri, clientId) {
+  self.sessionStorage.setItem(redirectUri + "_responseType", responseType);
+  self.sessionStorage.setItem(redirectUri + "_authorizationUri", authorizationUri);
+  self.sessionStorage.setItem(redirectUri + "_tokenUri", tokenUri);
+  self.sessionStorage.setItem(redirectUri + "_clientId", clientId);
+}
+export async function login(redirectUri) {
+  const thisResponseType = self.sessionStorage.getItem(redirectUri + "_responseType");
+  const thisAuthorizationUri = self.sessionStorage.getItem(redirectUri + "_authorizationUri");
+  const thisTokenUri = self.sessionStorage.getItem(redirectUri + "_tokenUri");
+  const thisClientId = self.sessionStorage.getItem(redirectUri + "_clientId");
+  thisRedirectUri = redirectUri;
+  switch (thisResponseType) {
     case "token": {
       if (selfUrl.searchParams.has("access_token")) {
-        self.sessionStorage.setItem("accessToken", selfUrl.searchParams.get("access_token"));
-        self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * selfUrl.searchParams.has("expires_in"));
-        self.sessionStorage.removeItem("refreshToken");
+        self.sessionStorage.setItem(thisRedirectUri + "_accessToken", selfUrl.searchParams.get("access_token"));
+        self.sessionStorage.setItem(thisRedirectUri + "_expiresAt", Date.now() + 1000 * selfUrl.searchParams.has("expires_in"));
+        self.sessionStorage.removeItem(thisRedirectUri + "_refreshToken");
       } else {
         const authorizationQuery = new URLSearchParams();
         authorizationQuery.append("response_type", "token");
-        authorizationQuery.append("client_id", clientId);
-        authorizationQuery.append("redirect_uri", redirectUri);
-        const authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
+        authorizationQuery.append("client_id", thisClientId);
+        authorizationQuery.append("redirect_uri", thisRedirectUri);
+        const authorizationLocation = new URL(thisAuthorizationUri.toString() + "?" + authorizationQuery.toString());
         self.location = authorizationLocation.toString();
       }
     }
@@ -28,27 +41,27 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
         const tokenParameters = new URLSearchParams();
         tokenParameters.append("grant_type", "authorization_code");
         tokenParameters.append("code", code);
-        tokenParameters.append("redirect_uri", redirectUri);
-        tokenParameters.append("client_id", clientId);
-        const tokenRequest = new Request(tokenUri, {
+        tokenParameters.append("redirect_uri", thisRedirectUri);
+        tokenParameters.append("client_id", thisClientId);
+        const tokenRequest = new Request(thisTokenUri, {
           method: "POST",
           body: new Blob( [ tokenParameters.toString() ], { type: "application/x-www-form-urlencoded" }),
         });
         return (async () => {
           const tokenResponse = await fetch(tokenRequest);
           const tokenResponseParsed = await tokenResponse.json();
-          self.sessionStorage.setItem("accessToken", tokenResponseParsed.access_token);
-          self.sessionStorage.setItem("refreshToken", tokenResponseParsed.refresh_token);
-          self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * tokenResponseParsed.expires_in);
+          self.sessionStorage.setItem(thisRedirectUri + "_accessToken", tokenResponseParsed.access_token);
+          self.sessionStorage.setItem(thisRedirectUri + "_refreshToken", tokenResponseParsed.refresh_token);
+          self.sessionStorage.setItem(thisRedirectUri + "_expiresAt", Date.now() + 1000 * tokenResponseParsed.expires_in);
         })();
-      } else if (self.sessionStorage.getItem("accessToken") !== null) {
+      } else if (self.sessionStorage.getItem(thisRedirectUri + "_accessToken") !== null) {
         return;
       } else {
         const authorizationQuery = new URLSearchParams();
         authorizationQuery.append("response_type", "code");
-        authorizationQuery.append("client_id", clientId);
-        authorizationQuery.append("redirect_uri", redirectUri);
-        const authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
+        authorizationQuery.append("client_id", thisClientId);
+        authorizationQuery.append("redirect_uri", thisRedirectUri);
+        const authorizationLocation = new URL(thisAuthorizationUri.toString() + "?" + authorizationQuery.toString());
         self.location = authorizationLocation.toString();
         throw new Error("Redirecting to authorization endpoint...");
       }
@@ -57,37 +70,12 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
     default:
       throw new Error("Invalid response type");
   }
-  async function performRefreshToken() {
-    self.sessionStorage.removeItem("accessToken");
-    const refreshToken = self.sessionStorage.getItem("refreshToken");
-    const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
-    const refreshParameters = new URLSearchParams();
-    refreshParameters.append("grant_type", "refresh_token");
-    refreshParameters.append("refresh_token", refreshToken);
-    const refreshRequest = new Request(tokenUri, {
-      method: "POST",
-      body: new Blob( [ refreshParameters.toString() ], { type: "application/x-www-form-urlencoded" }),
-    });
-    const refreshResponse = await fetch(refreshRequest);
-    const refreshResponseParsed = refreshResponse.json();
-    if (refreshResponse.statusCode == 200) {
-      self.sessionStorage.setItem("accessToken", refreshResponse.access_token);
-      if (refreshResponse.refresh_token) {
-        self.sessionStorage.setItem("refreshToken", refreshResponse.refresh_token);
-      }
-      self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * refreshResponse.expires_in);
-    } else if (refreshResponse.statusCode == 400) {
-      throw new Error("error: " + refreshResponseParsed.error + "\nerror description: " + refreshResponseParsed.error_description + "\nerror URI: " + refreshResponseParsed.error_uri);
-    } else {
-      throw new Error("Unexpected response to token refresh request");
-    }
-  }
 }
 export function newRequestWithToken(url, options) {
   if (isTokenExpired()) {
     performRefreshToken();
   }
-  const access_token = self.sessionStorage.getItem("accessToken");
+  const access_token = self.sessionStorage.getItem(thisRedirectUri + "_accessToken");
   if (options.headers) {
     options.headers.append("Authorization", "Bearer " + access_token);
   } else {
@@ -97,9 +85,37 @@ export function newRequestWithToken(url, options) {
   return new Request(url, options);
 }
 function isTokenExpired() {
-  const expiresAt = new Date(self.sessionStorage.getItem("expiresAt"));
+  const expiresAt = new Date(self.sessionStorage.getItem(thisRedirectUri + "_expiresAt"));
   if (!expiresAt) {
     return false;
   }
   return (new Date() >= expiresAt);
+}
+async function performRefreshToken() {
+  const thisResponseType = self.sessionStorage.getItem(redirectUri + "_responseType");
+  const thisAuthorizationUri = self.sessionStorage.getItem(redirectUri + "_authorizationUri");
+  const thisTokenUri = self.sessionStorage.getItem(redirectUri + "_tokenUri");
+  const thisClientId = self.sessionStorage.getItem(redirectUri + "_clientId");
+  self.sessionStorage.removeItem(thisRedirectUri + "_accessToken");
+  const refreshToken = self.sessionStorage.getItem(thisRedirectUri + "_refreshToken");
+  const refreshParameters = new URLSearchParams();
+  refreshParameters.append("grant_type", "refresh_token");
+  refreshParameters.append("refresh_token", refreshToken);
+  const refreshRequest = new Request(thisTokenUri, {
+    method: "POST",
+    body: new Blob( [ refreshParameters.toString() ], { type: "application/x-www-form-urlencoded" }),
+  });
+  const refreshResponse = await fetch(refreshRequest);
+  const refreshResponseParsed = await refreshResponse.json();
+  if (refreshResponse.statusCode == 200) {
+    self.sessionStorage.setItem(thisRedirectUri + "_accessToken", refreshResponse.access_token);
+    if (refreshResponse.refresh_token) {
+      self.sessionStorage.setItem(thisRedirectUri + "_refreshToken", refreshResponse.refresh_token);
+    }
+    self.sessionStorage.setItem(thisRedirectUri + "_expiresAt", Date.now() + 1000 * refreshResponse.expires_in);
+  } else if (refreshResponse.statusCode == 400) {
+    throw new Error("error: " + refreshResponseParsed.error + "\nerror description: " + refreshResponseParsed.error_description + "\nerror URI: " + refreshResponseParsed.error_uri);
+  } else {
+    throw new Error("Unexpected response to token refresh request");
+  }
 }
