@@ -35,7 +35,7 @@ function start([ Oauth ]) {
   btnDelete.innerHTML = "Delete User";
   document.body.appendChild(btnDelete);
   btnDelete.addEventListener("click", async () => {
-    const deleteEndpoint = new URL("./remove/", apiUrl);
+    const deleteEndpoint = new URL("./delete/", apiUrl);
     const deleteRequest = Oauth.newRequestWithToken(deleteEndpoint, {
       method: "POST",
       body: "",
