@@ -25,7 +25,7 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
     case "code": {
       if (selfUrl.searchParams.has("code")) {
         const code = selfUrl.searchParams.get("code");
-        tokenParameters = new URLSearchParams();
+        const tokenParameters = new URLSearchParams();
         tokenParameters.append("grant_type", "authorization_code");
         tokenParameters.append("code", code);
         tokenParameters.append("redirect_uri", redirectUri);
