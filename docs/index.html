@@ -26,7 +26,8 @@ const promiseOauth = import("./oauth2.mjs");
 Promise.all([ promiseLoad, promiseOauth ]).then(login).then(start);
     
 async function login([ load, Oauth ]) {
-  await Oauth.login(response_type, authorizationUri, tokenUri, clientId, redirectUri);
+  Oauth.setup(response_type, authorizationUri, tokenUri, clientId);
+  await Oauth.login(redirectUri);
   return [ Oauth ];
 }
 function start([ Oauth ]) {
