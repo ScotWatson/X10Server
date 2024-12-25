@@ -9,15 +9,15 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
   switch (response_type) {
     case "token": {
       if (selfUrl.searchParams.has("access_token")) {
-        self.sessionStorage.setItem("accessToken", tokenResponseParsed.access_token);
-        self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * tokenResponseParsed.expires_in);
+        self.sessionStorage.setItem("accessToken", selfUrl.searchParams.get("access_token"));
+        self.sessionStorage.setItem("expiresAt", Date.now() + 1000 * selfUrl.searchParams.has("expires_in"));
         self.sessionStorage.removeItem("refreshToken");
       } else {
-        authorizationQuery = new URLSearchParams();
+        const authorizationQuery = new URLSearchParams();
         authorizationQuery.append("response_type", "token");
         authorizationQuery.append("client_id", clientId);
         authorizationQuery.append("redirect_uri", redirectUri);
-        authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
+        const authorizationLocation = new URL(authorizationUri.toString() + "?" + authorizationQuery.toString());
         self.location = authorizationLocation.toString();
       }
     }
