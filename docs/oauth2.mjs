@@ -57,10 +57,6 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
     default:
       throw new Error("Invalid response type");
   }
-  function isTokenExpired() {
-    const expiresAt = new Date(self.navigator.sessionStorage.get("expiresAt"));
-    return (new Date() >= expiresAt);
-  }
   async function performRefreshToken() {
     self.sessionStorage.removeItem("accessToken");
     const refreshToken = self.sessionStorage.getItem("refreshToken");
@@ -96,4 +92,8 @@ export async function newRequestWithToken(url, options) {
     options.headers.add("Authorization", "Bearer " + access_token);
   }
   return new Request(url, options);
+}
+function isTokenExpired() {
+  const expiresAt = new Date(self.navigator.sessionStorage.get("expiresAt"));
+  return (new Date() >= expiresAt);
 }
