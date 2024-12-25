@@ -36,10 +36,10 @@ function start([ Oauth ]) {
   document.body.appendChild(btnDelete);
   btnDelete.addEventListener("click", async () => {
     const deleteEndpoint = new URL("./delete", apiUrl);
-    const deleteResponse = Oauth.fetchWithToken(new Request(deleteEndpoint, {
+    const deleteResponse = Oauth.fetchWithToken(deleteEndpoint, {
       method: "POST",
-      body: ,
-    }));
+      body: "",
+    });
     if (deleteResponse.statusCode === 200) {
       alert("User successfully deleted!");
       self.location = "https://www.scotwatson.x10.mx";
