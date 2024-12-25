@@ -87,7 +87,7 @@ export async function login(response_type, authorizationUri, tokenUri, clientId,
     }
   }
 }
-export async function fetchWithToken(url, options) {
+export async function newRequestWithToken(url, options) {
   if (isTokenExpired()) {
     performRefreshToken();
   }
@@ -95,5 +95,5 @@ export async function fetchWithToken(url, options) {
   if (options.headers) {
     options.headers.add("Authorization", "Bearer " + access_token);
   }
-  return fetch(url, options);
+  return new Request(url, options);
 }
