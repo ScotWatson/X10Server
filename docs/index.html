@@ -50,6 +50,27 @@ function start([ Oauth ]) {
       alert("Attempt to delete user failed!");
     }
   });
+  const btnPassword = document.createElement("button");
+  btnPassword.innerHTML = "Change Password";
+  document.body.appendChild(btnPassword);
+  const inputPassword = document.createElement("input");
+  inputPassword.type = "password";
+  document.body.appendChild(inputPassword);
+  btnPassword.addEventListener("click", async () => {
+    const passwordEndpoint = new URL("./password/", apiUrl);
+    const newPassword = inputPassword.value;
+    const passwordRequest = Oauth.newRequestWithToken(passwordEndpoint, {
+      method: "POST",
+      body: new Blob([ JSON.stringify({ newPassword }) ], { type: "application/json" }),
+    });
+    console.log(passwordRequest);
+    const passwordResponse = await fetch(passwordRequest);
+    if (passwordResponse.status === 200) {
+      alert("Password successfully changed!");
+    } else {
+      alert("Attempt to change password failed!");
+    }
+  });
 }
   </script>
 </html>
