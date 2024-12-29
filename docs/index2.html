@@ -18,6 +18,7 @@ const clientId = "ec873256-8881-4210-b100-bcc6b964a668";
 const redirectUri = new URL("https://scotwatson.github.io/X10Server/");
 
 const selfUrl = new URL(self.location);
+self.window.addEventListener("focus", () => {});
 
 const promiseLoad = new Promise((resolve, reject) => {
   window.addEventListener("load", () => {
@@ -27,25 +28,58 @@ const promiseLoad = new Promise((resolve, reject) => {
 const promiseOauth = import("./oauth2.mjs");
 Promise.all([ promiseLoad, promiseOauth ]).then(login).then(start);
     
+let tokenPort = null;
+let userWindow = null;
+
 async function login([ load, Oauth ]) {
   Oauth.setup(response_type, authorizationUri, tokenUri, clientId);
   await Oauth.login(redirectUri);
   return [ Oauth ];
 }
 function start([ Oauth ]) {
-  const tokenChannel = new MessageChannel();
-  const tokenPort = tokenChannel.port1;
-  const userWindow = window.open(new URL("./index.html", selfUrl);
-  userWindow.addEventListener("load", () => {
-    userWindow.postMessage({
-      name: "oauth2_token",
-      port: tokenChannel.port2,
-    }, [ tokenChannel.port2 ]);
+  const btnUser = document.createElement("button");
+  window.addEventListener("message", (e) => {
+    if (e.data.name && e.data.port) {
+      switch (e.data.name) {
+        case "oauth2_token":
+          tokenPort = e.data.port;
+          userWindow = e.source;
+          setupTokenPort();
+          tokenPort.postMessage(Oauth.getAccessToken());
+        default:
+          throw new Error("Unrecognized message port name");
+      }
+    }
   });
-  tokenPort.postMessage({
-    accessToken:,
-    expiresAt:,
+  btnUser.addEventListener("click", () => {
+    const tokenChannel = new MessageChannel();
+    tokenPort = tokenChannel.port1;
+    const userUrl = new URL("./index.html")
+    userWindow = window.open(userUrl, selfUrl);
+    userWindow.addEventListener("load", () => {
+      userWindow.postMessage({
+        name: "oauth2_token",
+        port: tokenChannel.port2,
+      }, userUrl.origin, [ tokenChannel.port2 ]);
+    });
+    setupTokenPort();
   });
+  function setupTokenPort() {
+    tokenPort.postMessage(Oauth.getAccessToken());
+    tokenPort.addEventListener("message", (e) => {
+      if (typeof e.data === "string") {
+        switch (e.data) {
+          case "refresh":
+            self.sessionStorage.setItem(redirectUri + "_sendRefreshToken", true);
+            Oauth.performRefreshToken();
+            tokenPort.postMessage(Oauth.getAccessToken());
+          case "send":
+            tokenPort.postMessage(Oauth.getAccessToken());
+          default:
+        }
+      }
+    });
+  }
 }
   </script>
 </html>
