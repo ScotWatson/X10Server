@@ -9,6 +9,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   </head>
   <body>
   </body>
+  <!-- window-init.js must be loaded classically to ensure capture of page load events -->
+  <script id="Init" src="https://scotwatson.github.io/WebInterface/window-init.js"></script>
+  <!-- MessageQueue.js must be loaded classically to ensure capture of page load events -->
+  <script id="MessageQueue" src="https://scotwatson.github.io/WebInterface/MessageQueue.js"></script>
   <script>
 const selfUrl = new URL(self.location);
 const response_type = "code";
