@@ -8,12 +8,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     -->
   </head>
   <body>
-  </body>
-  <!-- window-init.js must be loaded classically to ensure capture of page load events -->
-  <script id="Init" src="https://scotwatson.github.io/WebInterface/window-init.js"></script>
-  <!-- MessageQueue.js must be loaded classically to ensure capture of page load events -->
-  <script id="MessageQueue" src="https://scotwatson.github.io/WebInterface/MessageQueue.js"></script>
-  <script>
+    <!-- window-init.js must be loaded classically to ensure capture of page load events -->
+    <script id="Init" src="https://scotwatson.github.io/WebInterface/window-init.js"></script>
+    <!-- MessageQueue.js must be loaded classically to ensure capture of page load events -->
+    <script id="MessageQueue" src="https://scotwatson.github.io/WebInterface/MessageQueue.js"></script>
+    <script>
 const Init = document.getElementById("Init").exports;
 const MessageQueue = document.getElementById("MessageQueue").exports.default;
 Init.createQueues(MessageQueue);
@@ -169,5 +168,6 @@ function passwordTransform(password) {
     }
   }
 }
-  </script>
+    </script>
+  </body>
 </html>
