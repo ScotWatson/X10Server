@@ -55,7 +55,7 @@ export async function login(redirectUri) {
             goToLogin();
             throw new Error("Bad authorization code. Redirecting to authorization endpoint...");
           } else {
-            goToLogin();
+//            goToLogin();
             throw new Error("Unable to continue. Redirecting to authorization endpoint...");
           }
         })();
