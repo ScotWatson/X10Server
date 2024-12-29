@@ -70,15 +70,23 @@ function start([ Oauth ]) {
       if (typeof e.data === "string") {
         switch (e.data) {
           case "refresh":
-            self.sessionStorage.setItem(redirectUri + "_sendRefreshToken", true);
-            Oauth.performRefreshToken();
-            tokenPort.postMessage(Oauth.getAccessToken());
+            (async () => {
+              try {
+                await Oauth.performRefreshToken();
+                tokenPort.postMessage(Oauth.getAccessToken());
+              } catch (e) {
+                tokenPort.postMessage();
+                tokenPort.close();
+                Oauth.goToLogin();
+              }
+            })();
           case "send":
             tokenPort.postMessage(Oauth.getAccessToken());
           default:
         }
       }
     });
+    tokenPort.start();
   }
 }
   </script>
