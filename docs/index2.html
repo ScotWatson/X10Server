@@ -80,9 +80,12 @@ function start([ Oauth ]) {
                 Oauth.goToLogin();
               }
             })();
+            break;
           case "send":
             tokenPort.postMessage(Oauth.getAccessToken());
+            break;
           default:
+            throw new Error("Unrecognized command");
         }
       }
     });
