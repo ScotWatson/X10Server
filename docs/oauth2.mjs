@@ -71,11 +71,14 @@ export async function login(redirectUri) {
       throw new Error("Invalid response type");
   }
 }
-function goToLogin() {
+export function goToLogin() {
   const thisResponseType = self.sessionStorage.getItem(thisRedirectUri + "_responseType");
   const thisAuthorizationUri = self.sessionStorage.getItem(thisRedirectUri + "_authorizationUri");
   const thisTokenUri = self.sessionStorage.getItem(thisRedirectUri + "_tokenUri");
   const thisClientId = self.sessionStorage.getItem(thisRedirectUri + "_clientId");
+  if (!thisClientId) {
+    throw new Error("Unable to refresh token");
+  }
   const authorizationQuery = new URLSearchParams();
   authorizationQuery.append("response_type", "code");
   authorizationQuery.append("client_id", thisClientId);
@@ -115,7 +118,11 @@ export async function fetchWithToken(request) {
 */
 export async function fetchRequestWithToken(url, options) {
   if (isTokenExpired()) {
-    await performRefreshToken();
+    try {
+      await performRefreshToken();
+    } catch (e) {
+      goToLogin();
+    }
   }
   let access_token = self.sessionStorage.getItem(thisRedirectUri + "_accessToken");
   if (options.headers) {
@@ -127,7 +134,11 @@ export async function fetchRequestWithToken(url, options) {
   let request = new Request(url, options);
   let response = await fetch(request);
   if (response.status === 401) {
-    await performRefreshToken();
+    try {
+      await performRefreshToken();
+    } catch (e) {
+      goToLogin();
+    }
     access_token = self.sessionStorage.getItem(thisRedirectUri + "_accessToken");
     options.headers.set("Authorization", "Bearer " + access_token);
     request = new Request(url, options);
@@ -135,16 +146,16 @@ export async function fetchRequestWithToken(url, options) {
   }
   return response;
 }
-async function performRefreshToken() {
+export async function performRefreshToken() {
   const thisResponseType = self.sessionStorage.getItem(redirectUri + "_responseType");
   const thisAuthorizationUri = self.sessionStorage.getItem(redirectUri + "_authorizationUri");
   const thisTokenUri = self.sessionStorage.getItem(redirectUri + "_tokenUri");
   const thisClientId = self.sessionStorage.getItem(redirectUri + "_clientId");
-  if (!thisClientId) {
-    throw new Error("Unable to refresh token");
-  }
   self.sessionStorage.removeItem(thisRedirectUri + "_accessToken");
   const refreshToken = self.sessionStorage.getItem(thisRedirectUri + "_refreshToken");
+  if (!(thisTokenUri && refreshToken)) {
+    throw new Error("Unable to refresh token");
+  }
   const refreshParameters = new URLSearchParams();
   refreshParameters.append("grant_type", "refresh_token");
   refreshParameters.append("refresh_token", refreshToken);
@@ -162,7 +173,6 @@ async function performRefreshToken() {
     }
     self.sessionStorage.setItem(thisRedirectUri + "_expiresAt", Date.now() + 1000 * refreshResponseParsed.expires_in);
   } else if (refreshResponse.status === 400) {
-    goToLogin();
     throw new Error("error: " + refreshResponseParsed.error + "\nerror description: " + refreshResponseParsed.error_description + "\nerror URI: " + refreshResponseParsed.error_uri);
   } else {
     throw new Error("Unexpected response to token refresh request");
