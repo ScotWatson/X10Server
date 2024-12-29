@@ -17,58 +17,109 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 const Init = document.getElementById("Init").exports;
 const MessageQueue = document.getElementById("MessageQueue").exports.default;
 Init.createQueues(MessageQueue);
-let oauth2TokenPort = null;
-function handleOauth2TokenPort(evt) {
-  if (!(e.data.accessToken && e.data.expiresAt)) {
-    throw new Error("Invalid message on oauth2_token message port.");
-  }
-  Oauth.setAccessToken(e.data.accessToken, e.data.expiresAt);
-}
-function requestNewToken() {
-  if (oauth2TokenPort === null) {
-    throw new Error("Unable to request new token");
-  }
-  oauth2TokenPort.postMessage();
-}
-MessageQueue.addEventListener("message", (e) => {
-  if ((e.data.name) && (e.data.messagePort instanceof MessagePort)) {
-    switch (e.data.name) {
-      case "oauth2_token":
-        oauth2TokenPort = e.data.messagePort;
-        oauth2TokenPort.addEventListener("message", handleOauth2TokenPort);
-        break;
-      default:
-        throw new Error("Unrecognized Message Port");
-    }
-  }
-});
 
 const selfUrl = new URL(self.location);
 
-const promiseLoad = new Promise((resolve, reject) => {
-  window.addEventListener("load", () => {
-    resolve();
+const asyncWindow = new Promise(function (resolve, reject) {
+  window.addEventListener("load", function (evt) {
+    resolve(evt);
   });
 });
-const promiseOauth = import("./oauth2.mjs");
-Promise.all([ promiseLoad, promiseOauth ]).then(login).then(start);
-    
-async function login([ load, Oauth ]) {
-  Oauth.setup(response_type, authorizationUri, tokenUri, clientId);
-  await Oauth.login(redirectUri);
-  return [ Oauth ];
+
+const asyncOauth = import("./oauth2.mjs");
+
+(async function () {
+  try {
+    const modules = await Promise.all( [ asyncWindow, asyncOauth ] );
+    await login(modules);
+    start(modules);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+})();
+
+const redirectUri = new URL("./", selfUrl);
+
+async function login( [ evtWindow, Oauth ] ) {
+  const responseType = selfUrl.searchParams.get("response_type");
+  const authorizationUri = selfUrl.searchParams.get("authorization_uri");
+  const tokenUri = selfUrl.searchParams.get("token_uri");
+  const clientId = selfUrl.searchParams.get("client_id");
+  const baseUri = selfUrl.searchParams.get("base_uri");
+  if (responseType !== null) {
+    if ((authorizationUri === null) && (tokenUri === null) && (clientId === null) && (baseUri === null)) {
+      throw new Error("Missing Required Information to begin login.");
+    }
+    Oauth.setup(responseType, new URL(authorizationUri), new URL(tokenUri), clientId);
+    self.sessionStorage.setItem(redirectUri + "_baseUri", baseUri);
+  }
+  await Oauth.login(new URL(redirectUri));
+  return;
 }
-function start([ Oauth ]) {
+function start( [ evtWindow, Oauth ] ) {
   const apiUrl = new URL("https://www.scotwatson.x10.mx/");
+  let oauth2TokenPort = null;
+  let parentWindow = null;
+  const accessTokenEventTarget = new EventTarget();
+  function refreshToken() {
+    return new Promise((resolve, reject) => {
+      if (oauth2TokenPort) {
+        oauth2TokenPort.postMessage("refresh");
+        accessTokenEventTarget.addEventListener("set", () => { resolve(); });
+      } else {
+        Oauth.performRefreshToken().then(resolve, reject);
+      }
+    });
+  }
+  function handleOauth2TokenPort(e) {
+    if (typeof e.data === undefined) {
+      // message port is closed
+      oauth2TokenPort = null;
+      return;
+    }
+    if (!(e.data.accessToken && e.data.expiresAt)) {
+      throw new Error("Invalid message on oauth2_token message port.");
+    }
+    Oauth.setAccessToken(e.data);
+    accessTokenEventTarget.dispatchEvent("set");
+  }
+  self.window.addEventListener("focus", () => {
+    const tokenChannel = new MessageChannel();
+    oauth2TokenPort = tokenChannel.port1;
+    parentWindow.postMessage({
+      name: "oauth2_token",
+      port: tokenChannel.port2,
+    }, "*", [ tokenChannel.port2 ] );
+  });
+  MessageQueue.addEventListener("message", (e) => {
+    if ((e.data.name) && (e.data.port)) {
+      switch (e.data.name) {
+        case "oauth2_token":
+          parentWindow = e.source;
+          oauth2TokenPort = e.data.messagePort;
+          oauth2TokenPort.addEventListener("message", handleOauth2TokenPort);
+          break;
+        default:
+          throw new Error("Unrecognized Message Port");
+      }
+    }
+  });
   const btnDelete = document.createElement("button");
   btnDelete.innerHTML = "Delete User";
   document.body.appendChild(btnDelete);
   btnDelete.addEventListener("click", async () => {
     const deleteEndpoint = new URL("./delete/", apiUrl);
-    const deleteResponse = Oauth.fetchRequestWithToken(deleteEndpoint, {
-      method: "POST",
-      body: "",
-    });
+    while (true) {
+      try {
+        const deleteResponse = Oauth.fetchRequestWithToken(deleteEndpoint, {
+          method: "POST",
+          body: "",
+        });
+      } catch (e) {
+        await refreshToken();
+      }
+    }
     if (deleteResponse.status === 200) {
       alert("User successfully deleted!");
       self.location = "https://www.scotwatson.x10.mx";
