@@ -38,6 +38,8 @@ async function login([ load, Oauth ]) {
 }
 function start([ Oauth ]) {
   const btnUser = document.createElement("button");
+  btnUser.innerHTML = "Open User Management";
+  document.body.appendChild(btnUser);
   window.addEventListener("message", (e) => {
     if (e.data.name && e.data.port) {
       switch (e.data.name) {
