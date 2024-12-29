@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!--
+(c) 2024 Scot Watson  All Rights Reserved
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    -->
+    <title>X10 Server</title>
+  </head>
+  <body>
+  </body>
+  <script>
+const response_type = "code";
+const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
+const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
+const clientId = "ec873256-8881-4210-b100-bcc6b964a668";
+const redirectUri = new URL("https://scotwatson.github.io/X10Server/");
+
+const selfUrl = new URL(self.location);
+
+const promiseLoad = new Promise((resolve, reject) => {
+  window.addEventListener("load", () => {
+    resolve();
+  });
+});
+const promiseOauth = import("./oauth2.mjs");
+Promise.all([ promiseLoad, promiseOauth ]).then(login).then(start);
+    
+async function login([ load, Oauth ]) {
+  Oauth.setup(response_type, authorizationUri, tokenUri, clientId);
+  await Oauth.login(redirectUri);
+  return [ Oauth ];
+}
+function start([ Oauth ]) {
+  const tokenChannel = new MessageChannel();
+  const tokenPort = tokenChannel.port1;
+  const userWindow = window.open(new URL("./index.html", selfUrl);
+  userWindow.addEventListener("load", () => {
+    userWindow.postMessage({
+      name: "oauth2_token",
+      port: tokenChannel.port2,
+    }, [ tokenChannel.port2 ]);
+  });
+  tokenPort.postMessage({
+    accessToken:,
+    expiresAt:,
+  });
+}
+  </script>
+</html>
