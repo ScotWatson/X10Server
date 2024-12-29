@@ -57,7 +57,7 @@ function start([ Oauth ]) {
     const tokenChannel = new MessageChannel();
     tokenPort = tokenChannel.port1;
     const userUrl = new URL("./index.html", selfUrl);
-    userWindow = window.open(userUrl, selfUrl);
+    userWindow = window.open(userUrl);
     userWindow.addEventListener("load", () => {
       userWindow.postMessage({
         name: "oauth2_token",
