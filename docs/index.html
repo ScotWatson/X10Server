@@ -8,14 +8,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     -->
   </head>
   <body>
-    <!-- window-init.js must be loaded classically to ensure capture of page load events -->
-    <script id="Init" src="https://scotwatson.github.io/WebInterface/window-init.js"></script>
-    <!-- MessageQueue.js must be loaded classically to ensure capture of page load events -->
+    <!-- MessageQueue.js must be loaded classically to allow capture of all messages -->
     <script id="MessageQueue" src="https://scotwatson.github.io/WebInterface/MessageQueue.js"></script>
     <script>
-const Init = document.getElementById("Init").exports;
 const MessageQueue = document.getElementById("MessageQueue").exports.default;
-Init.createQueues(MessageQueue);
+const windowPort = new MessageQueue(self.window);
 
 const selfUrl = new URL(self.location);
 
@@ -94,7 +91,7 @@ function start( [ evtWindow, Oauth ] ) {
     oauth2TokenPort.addEventListener("message", handleOauth2TokenPort);
     oauth2TokenPort.start();
   });
-  MessageQueue.addEventListener("message", (e) => {
+  windowPort.addEventListener("message", (e) => {
     if ((e.data.name) && (e.data.port)) {
       switch (e.data.name) {
         case "oauth2_token":
