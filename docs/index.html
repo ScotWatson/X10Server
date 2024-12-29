@@ -14,12 +14,36 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
   <!-- MessageQueue.js must be loaded classically to ensure capture of page load events -->
   <script id="MessageQueue" src="https://scotwatson.github.io/WebInterface/MessageQueue.js"></script>
   <script>
+const Init = document.getElementById("Init").exports;
+const MessageQueue = document.getElementById("MessageQueue").exports.default;
+Init.createQueues(MessageQueue);
+let oauth2TokenPort = null;
+function handleOauth2TokenPort(evt) {
+  if (!(e.data.accessToken && e.data.expiresAt)) {
+    throw new Error("Invalid message on oauth2_token message port.");
+  }
+  Oauth.setAccessToken(e.data.accessToken, e.data.expiresAt);
+}
+function requestNewToken() {
+  if (oauth2TokenPort === null) {
+    throw new Error("Unable to request new token");
+  }
+  oauth2TokenPort.postMessage();
+}
+MessageQueue.addEventListener("message", (e) => {
+  if ((e.data.name) && (e.data.messagePort instanceof MessagePort)) {
+    switch (e.data.name) {
+      case "oauth2_token":
+        oauth2TokenPort = e.data.messagePort;
+        oauth2TokenPort.addEventListener("message", handleOauth2TokenPort);
+        break;
+      default:
+        throw new Error("Unrecognized Message Port");
+    }
+  }
+});
+
 const selfUrl = new URL(self.location);
-const response_type = "code";
-const authorizationUri = new URL("https://www.scotwatson.x10.mx/login/");
-const tokenUri = new URL("https://www.scotwatson.x10.mx/token/");
-const clientId = "ec873256-8881-4210-b100-bcc6b964a668";
-const redirectUri = new URL("https://scotwatson.github.io/X10Server/");
 
 const promiseLoad = new Promise((resolve, reject) => {
   window.addEventListener("load", () => {
@@ -41,12 +65,10 @@ function start([ Oauth ]) {
   document.body.appendChild(btnDelete);
   btnDelete.addEventListener("click", async () => {
     const deleteEndpoint = new URL("./delete/", apiUrl);
-    const deleteRequest = Oauth.newRequestWithToken(deleteEndpoint, {
+    const deleteResponse = Oauth.fetchRequestWithToken(deleteEndpoint, {
       method: "POST",
       body: "",
     });
-    console.log(deleteRequest);
-    const deleteResponse = await fetch(deleteRequest);
     if (deleteResponse.status === 200) {
       alert("User successfully deleted!");
       self.location = "https://www.scotwatson.x10.mx";
@@ -62,19 +84,35 @@ function start([ Oauth ]) {
   document.body.appendChild(inputPassword);
   btnPassword.addEventListener("click", async () => {
     const passwordEndpoint = new URL("./password/", apiUrl);
-    const newPassword = inputPassword.value;
-    const passwordRequest = Oauth.newRequestWithToken(passwordEndpoint, {
+    const passcode = passwordTransform(inputPassword.value);
+    const passwordResponse = Oauth.fetchRequestWithToken(passwordEndpoint, {
       method: "POST",
-      body: new Blob([ JSON.stringify({ newPassword }) ], { type: "application/json" }),
+      body: new Blob([ JSON.stringify({ passcode }) ], { type: "application/json" }),
     });
-    console.log(passwordRequest);
-    const passwordResponse = await fetch(passwordRequest);
     if (passwordResponse.status === 200) {
       alert("Password successfully changed!");
     } else {
       alert("Attempt to change password failed!");
     }
   });
+}
+// Transforms the password to prevent revealing the password to evesdroppers
+function passwordTransform(password) {
+  const ENCODER = new TextEncoder();
+  const hashedPassword = self.crypto.subtle.digest("sha-512", ENCODER.encode(password)));
+  return base64UrlEncode(hashedPasword);
+  function base64UrlEncode(byteArray) {
+    return base64Encode(byteArray).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  }
+  function base64Encode(byteArray) {
+    return btoa(createRawString(byteArray));
+  }
+  function createRawString(byteArray) {
+    let str = "";
+    for (const byte of byteArray) {
+      str += String.fromCharCode(byte);
+    }
+  }
 }
   </script>
 </html>
