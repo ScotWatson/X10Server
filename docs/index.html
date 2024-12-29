@@ -154,7 +154,7 @@ function start( [ evtWindow, Oauth ] ) {
 // Transforms the password to prevent revealing the password to evesdroppers
 function passwordTransform(password) {
   const ENCODER = new TextEncoder();
-  const hashedPassword = self.crypto.subtle.digest("sha-512", ENCODER.encode(password)));
+  const hashedPassword = self.crypto.subtle.digest("sha-512", ENCODER.encode(password));
   return base64UrlEncode(hashedPasword);
   function base64UrlEncode(byteArray) {
     return base64Encode(byteArray).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
