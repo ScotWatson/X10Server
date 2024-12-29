@@ -14,11 +14,11 @@ export function setup(responseType, authorizationUri, tokenUri, clientId) {
   self.sessionStorage.setItem(redirectUri + "_clientId", clientId);
 }
 export async function login(redirectUri) {
-  const thisResponseType = self.sessionStorage.getItem(redirectUri + "_responseType");
-  const thisAuthorizationUri = self.sessionStorage.getItem(redirectUri + "_authorizationUri");
-  const thisTokenUri = self.sessionStorage.getItem(redirectUri + "_tokenUri");
-  const thisClientId = self.sessionStorage.getItem(redirectUri + "_clientId");
   thisRedirectUri = redirectUri;
+  const thisResponseType = self.sessionStorage.getItem(thisRedirectUri + "_responseType");
+  const thisAuthorizationUri = self.sessionStorage.getItem(thisRedirectUri + "_authorizationUri");
+  const thisTokenUri = self.sessionStorage.getItem(thisRedirectUri + "_tokenUri");
+  const thisClientId = self.sessionStorage.getItem(thisRedirectUri + "_clientId");
   switch (thisResponseType) {
     case "token": {
       const params = new URLSearchParams(selfUrl.hash);
@@ -72,10 +72,10 @@ export async function login(redirectUri) {
   }
 }
 function goToLogin() {
-  const thisResponseType = self.sessionStorage.getItem(redirectUri + "_responseType");
-  const thisAuthorizationUri = self.sessionStorage.getItem(redirectUri + "_authorizationUri");
-  const thisTokenUri = self.sessionStorage.getItem(redirectUri + "_tokenUri");
-  const thisClientId = self.sessionStorage.getItem(redirectUri + "_clientId");
+  const thisResponseType = self.sessionStorage.getItem(thisRedirectUri + "_responseType");
+  const thisAuthorizationUri = self.sessionStorage.getItem(thisRedirectUri + "_authorizationUri");
+  const thisTokenUri = self.sessionStorage.getItem(thisRedirectUri + "_tokenUri");
+  const thisClientId = self.sessionStorage.getItem(thisRedirectUri + "_clientId");
   const authorizationQuery = new URLSearchParams();
   authorizationQuery.append("response_type", "code");
   authorizationQuery.append("client_id", thisClientId);
@@ -83,6 +83,14 @@ function goToLogin() {
   const authorizationLocation = new URL(thisAuthorizationUri.toString() + "?" + authorizationQuery.toString());
   self.location = authorizationLocation.toString();
 }
+function isTokenExpired() {
+  const expiresAt = new Date(Number(self.sessionStorage.getItem(thisRedirectUri + "_expiresAt")));
+  if (!expiresAt) {
+    return false;
+  }
+  return (new Date() >= expiresAt);
+}
+/*
 export async function newRequestWithToken(url, options) {
   if (isTokenExpired()) {
     await performRefreshToken();
@@ -96,13 +104,6 @@ export async function newRequestWithToken(url, options) {
   }
   return new Request(url, options);
 }
-function isTokenExpired() {
-  const expiresAt = new Date(Number(self.sessionStorage.getItem(thisRedirectUri + "_expiresAt")));
-  if (!expiresAt) {
-    return false;
-  }
-  return (new Date() >= expiresAt);
-}
 export async function fetchWithToken(request) {
   let response = await fetch(request);
   if (response.status === 401) {
@@ -111,6 +112,7 @@ export async function fetchWithToken(request) {
   }
   return response;
 }
+*/
 export async function fetchRequestWithToken(url, options) {
   if (isTokenExpired()) {
     await performRefreshToken();
@@ -138,6 +140,9 @@ async function performRefreshToken() {
   const thisAuthorizationUri = self.sessionStorage.getItem(redirectUri + "_authorizationUri");
   const thisTokenUri = self.sessionStorage.getItem(redirectUri + "_tokenUri");
   const thisClientId = self.sessionStorage.getItem(redirectUri + "_clientId");
+  if (!thisClientId) {
+    throw new Error("Unable to refresh token");
+  }
   self.sessionStorage.removeItem(thisRedirectUri + "_accessToken");
   const refreshToken = self.sessionStorage.getItem(thisRedirectUri + "_refreshToken");
   const refreshParameters = new URLSearchParams();
@@ -162,4 +167,14 @@ async function performRefreshToken() {
   } else {
     throw new Error("Unexpected response to token refresh request");
   }
+}
+export function getAccessToken() {
+  return {
+    accessToken: self.sessionStorage.getItem(thisRedirectUri + "_accessToken"),
+    expiresAt: self.sessionStorage.getItem(thisRedirectUri + "_expiresAt"),
+  };
+}
+export function setAccessToken(args) {
+  self.sessionStorage.setItem(thisRedirectUri + "_accessToken", args.accessToken);
+  self.sessionStorage.setItem(thisRedirectUri + "_expiresAt", args.expiresAt);
 }
