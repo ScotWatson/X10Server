@@ -74,7 +74,8 @@ function start( [ evtWindow, Oauth ] ) {
   }
   function handleOauth2TokenPort(e) {
     if (typeof e.data === undefined) {
-      // message port is closed
+      // other message port is closed
+      oauth2TokenPort.close();
       oauth2TokenPort = null;
       return;
     }
@@ -91,14 +92,17 @@ function start( [ evtWindow, Oauth ] ) {
       name: "oauth2_token",
       port: tokenChannel.port2,
     }, "*", [ tokenChannel.port2 ] );
+    oauth2TokenPort.addEventListener("message", handleOauth2TokenPort);
+    oauth2TokenPort.start();
   });
   MessageQueue.addEventListener("message", (e) => {
     if ((e.data.name) && (e.data.port)) {
       switch (e.data.name) {
         case "oauth2_token":
           parentWindow = e.source;
-          oauth2TokenPort = e.data.messagePort;
+          oauth2TokenPort = e.data.port;
           oauth2TokenPort.addEventListener("message", handleOauth2TokenPort);
+          oauth2TokenPort.start();
           break;
         default:
           throw new Error("Unrecognized Message Port");
