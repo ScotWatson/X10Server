@@ -56,7 +56,7 @@ function start([ Oauth ]) {
   btnUser.addEventListener("click", () => {
     const tokenChannel = new MessageChannel();
     tokenPort = tokenChannel.port1;
-    const userUrl = new URL("./index.html")
+    const userUrl = new URL("./index.html", selfUrl);
     userWindow = window.open(userUrl, selfUrl);
     userWindow.addEventListener("load", () => {
       userWindow.postMessage({
