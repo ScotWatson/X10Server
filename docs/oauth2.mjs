@@ -19,6 +19,9 @@ export async function login(redirectUri) {
   const thisAuthorizationUri = self.sessionStorage.getItem(thisRedirectUri + "_authorizationUri");
   const thisTokenUri = self.sessionStorage.getItem(thisRedirectUri + "_tokenUri");
   const thisClientId = self.sessionStorage.getItem(thisRedirectUri + "_clientId");
+  if (!thisResponseType) {
+    // 
+  }
   switch (thisResponseType) {
     case "token": {
       const params = new URLSearchParams(selfUrl.hash);
