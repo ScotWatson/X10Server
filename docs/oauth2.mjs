@@ -20,7 +20,8 @@ export async function login(redirectUri) {
   const thisTokenUri = self.sessionStorage.getItem(thisRedirectUri + "_tokenUri");
   const thisClientId = self.sessionStorage.getItem(thisRedirectUri + "_clientId");
   if (!thisResponseType) {
-    // 
+    // do not perform login without a response type
+    return;
   }
   switch (thisResponseType) {
     case "token": {
